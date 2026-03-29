@@ -5,7 +5,7 @@ class Deck {
     private $cards = [];
 
     public function __construct() {
-        $this->resetDeck();
+        $this -> resetDeck();
     }
 
     // 重置並生成 52 張牌
@@ -16,7 +16,7 @@ class Deck {
 
         foreach ($suits as $suit) {
             foreach ($ranks as $rank) {
-                $this->cards[] = new Card($suit, $rank);
+                $this -> cards[] = new Card($suit, $rank);
             }
         }
     }
