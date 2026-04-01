@@ -8,7 +8,9 @@ class Deck {
         $this -> resetDeck();
     }
 
+    // 初始化資料陣列
     // 重置並生成 52 張牌
+
     public function resetDeck() {
         $this->cards = [];
         $suits = ['Spades', 'Hearts', 'Diamonds', 'Clubs'];
