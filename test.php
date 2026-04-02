@@ -10,4 +10,4 @@ for ($i = 0; $i < 5; $i++) {
     $card = $deck -> deal();
     echo $card -> toString() . " ";
 }
-echo "\n剩下牌數: " . $deck->getRemainingCount() . " 張\n";
+echo "\n剩下牌數: " . $deck -> getRemainingCount() . " 張\n";

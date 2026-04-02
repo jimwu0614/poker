@@ -27,7 +27,7 @@
                 'Diamonds' => '♦',
                 'Clubs' => '♣'
             ];
-            return $symbols [$this->suit] . $this -> rank;
+            return $symbols [$this -> suit] . $this -> rank;
         }
     }
 ?>
