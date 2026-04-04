@@ -1,8 +1,6 @@
 <?php
 
-
-
-    class Card {
+class Card {
         private $suit; // 花色: Spades, Hearts, Diamonds, Clubs
         private $rank; // 點數: 2-10, J, Q, K, A
 
