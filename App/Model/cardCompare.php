@@ -18,7 +18,7 @@ class CardCompare {
 
     // 點數權重表
     // A 視為 14；2 是最小的牌，權重為 2
-    
+
     public $rankMap = [
         '2'=>2, '3'=>3, '4'=>4, '5'=>5, '6'=>6, '7'=>7, '8'=>8, '9'=>9, '10'=>10, 
         'J'=>11, 'Q'=>12, 'K'=>13, 'A'=>14
@@ -106,6 +106,7 @@ class CardCompare {
 
     // --- 以下為細分的檢查零件 ---
 
+    // 'high' 用來比較同牌型時誰的牌點數較大 
     public function checkFourOfAKind($cards) {
         $counts = $this->getRankCounts($cards);
         foreach ($counts as $rank => $num) {
@@ -228,4 +229,16 @@ class CardCompare {
         }
         return null;
     }
+
+    // 皇家同花順檢查 (簡單調用上面兩個)
+    public function checkRoyalFlush($cards) {
+        $isFlush = $this->checkFlush($cards);
+        $isStraight = $this->checkStraight($cards);
+
+        if ($isFlush && $isStraight && $isStraight['high'] == 14) { // 順子最高牌是 A
+            return ['power' => 10, 'label' => '皇家同花順', 'high' => $isStraight['high']];
+        }
+        return null;
+    }
+
 }

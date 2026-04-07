@@ -1,6 +1,6 @@
 <?php
-require_once 'backend/card.php';
-require_once 'backend/deck.php';
+require_once 'App/Model/card.php';
+require_once 'App/Model/deck.php';
 
 $deck = new Deck();
 $deck -> shuffle(); // 洗牌
