@@ -39,4 +39,17 @@ class Deck {
     public function getRemainingCount() {
         return count($this -> cards);
     }
+
+
+    public function drawMultiple($count) {
+        $hand = [];
+        for ($i = 0; $i < $count; $i++) {
+            $card = $this->deal();
+            if ($card) {
+                $hand[] = $card;
+            }
+        }
+        return $hand;
+    }
+
 }
