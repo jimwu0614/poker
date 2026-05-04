@@ -56,6 +56,7 @@ class CardCompare {
             if ($a['power'] != $b['power']) {
                 return $b['power'] <=> $a['power'];
             }
+            // PHP 比較陣列會從 index 0 開始往後比，非常方便！
             return $b['high'] <=> $a['high'];
         });
 
@@ -211,19 +212,36 @@ class CardCompare {
 
     public function checkOnePair($cards) {
         $counts = $this->getRankCounts($cards);
+        $pairRank = 0;
+        $others = [];
+        
         foreach ($counts as $rank => $num) {
-            if ($num >= 2) return ['power' => 2, 'label' => '對子', 'high' => $rank];
+            if ($num >= 2) $pairRank = $rank;
+            else $others[] = $rank;
+        }
+        
+        if ($pairRank > 0) {
+            rsort($others);
+            // [對子點數, 踢腳1, 踢腳2, 踢腳3]
+            return [
+                'power' => 2, 
+                'label' => '對子', 
+                'high' => array_merge([$pairRank], array_slice($others, 0, 3))
+            ];
         }
         return null;
     }
 
     public function checkHighCard($cards) {
-        $max = 0;
-        foreach ($cards as $c) {
-            $val = $this->rankMap[$c->getRank()];
-            if ($val > $max) $max = $val;
-        }
-        return ['power' => 1, 'label' => '高牌', 'high' => $max];
+        $ranks = [];
+        foreach ($cards as $c) { $ranks[] = $this->rankMap[$c->getRank()]; }
+        rsort($ranks);
+        // 取前五張高牌作為比較依據
+        return [
+            'power' => 1, 
+            'label' => '高牌', 
+            'high' => array_slice($ranks, 0, 5)
+        ];
     }
 
     // 輔助工具：計算各個點數出現幾次
