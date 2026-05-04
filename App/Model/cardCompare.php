@@ -184,12 +184,27 @@ class CardCompare {
     public function checkTwoPairs($cards) {
         $counts = $this->getRankCounts($cards);
         $pairs = [];
+        $others = [];
+        
         foreach ($counts as $rank => $num) {
-            if ($num >= 2) $pairs[] = $rank;
+            if ($num >= 2) {
+                $pairs[] = $rank;
+            } else {
+                $others[] = $rank;
+            }
         }
+
         if (count($pairs) >= 2) {
-            rsort($pairs);
-            return ['power' => 3, 'label' => '兩對', 'high' => $pairs[0]];
+            rsort($pairs); // 由大到小排對子
+            rsort($others); // 由大到小排剩下的牌
+            
+            // 我們把 high 改成一個陣列：[第一對, 第二對, 踢腳]
+            // 這樣在比較時，PHP 的 <=> 會自動按順序比下去
+            return [
+                'power' => 3, 
+                'label' => '兩對', 
+                'high' => [$pairs[0], $pairs[1], $others[0] ?? 0] 
+            ];
         }
         return null;
     }
@@ -230,7 +245,7 @@ class CardCompare {
         return null;
     }
 
-    // 皇家同花順檢查 (簡單調用上面兩個)
+    // 皇家同花順檢查 (簡單調用上面兩個) =
     public function checkRoyalFlush($cards) {
         $isFlush = $this->checkFlush($cards);
         $isStraight = $this->checkStraight($cards);
