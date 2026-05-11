@@ -51,53 +51,11 @@
     <div class="status-msg" id="msg">請點擊開始遊戲</div>
 
     <div class="controls">
-        <button onclick="startNewGame()">開始新局</button>
+        <button id="action-btn" onclick="nextStep()">開始新局</button>
     </div>
 
-    <script>
-        // 渲染卡片的工具函式
-        function createCardHTML(cardObj) {
-            const suitMap = { 'Spades': '♠', 'Hearts': '♥', 'Diamonds': '♦', 'Clubs': '♣' };
-            const isRed = (cardObj.suit === 'Hearts' || cardObj.suit === 'Diamonds');
-            return `<div class="card-slot card ${isRed ? 'red' : ''}">${suitMap[cardObj.suit]}${cardObj.rank}</div>`;
-        }
 
-        async function startNewGame() {
-            document.getElementById('msg').innerText = "洗牌中...";
-            
-            try {
-                // 呼叫你的 API
-                const response = await fetch('../App/Api/action.php?action=new_game');
-                const data = await response.json();
+    <script src="js/game.js"></script>
 
-                if (data.status === 'success') {
-                    renderGame(data);
-                    document.getElementById('msg').innerText = "發牌完成！贏家是：" + data.rankings[0].name;
-                }
-            } catch (error) {
-                console.error("API 呼叫失敗:", error);
-                document.getElementById('msg').innerText = "連線失敗，請檢查 API 路徑";
-            }
-        }
-
-        function renderGame(data) {
-            // 1. 渲染公牌
-            const communityDiv = document.getElementById('community-cards');
-            communityDiv.innerHTML = data.community_cards.map(c => createCardHTML(c)).join('');
-
-            // 2. 渲染玩家私有牌
-            const playerDiv = document.getElementById('player-cards');
-            playerDiv.innerHTML = data.player.private_cards.map(c => createCardHTML(c)).join('');
-
-            // 3. 渲染 AI 對手
-            data.opponents.forEach((bot, index) => {
-                const botDiv = document.getElementById('bot-' + index);
-                botDiv.innerHTML = `
-                    <div class="player-info"><strong>${bot.name}</strong> (${bot.strategy})</div>
-                    <div>${bot.private_cards.map(c => createCardHTML(c)).join('')}</div>
-                `;
-            });
-        }
-    </script>
 </body>
 </html>
