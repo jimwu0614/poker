@@ -2,16 +2,19 @@
 require_once __DIR__ . '/../Model/db.php';
 require_once __DIR__ . '/../Model/cardCompare.php';
 require_once __DIR__ . '/../Model/deck.php';
+require_once __DIR__ . '/../Model/user.php';
 
 class GameController {
     private $db;
     private $judge;
     private $deck;
+    private $user;
 
     public function __construct() {
         $this->db = new Database();
         $this->judge = new CardCompare();
         $this->deck = new Deck();
+        $this->user = new User($this->db->getConnection());
     }
 
     /**

@@ -18,7 +18,7 @@ async function nextStep() {
             if (gameData.status === 'success') {
                 currentStage = 1;
                 renderPreFlop();
-                btn.innerText = "下一輪 (翻牌)";
+                btn.innerText = "下一輪";
             }
         } catch (error) {
             console.error("API Error:", error);
@@ -29,9 +29,9 @@ async function nextStep() {
         renderStage();
         
         // 更新按鈕文字
-        if (currentStage === 2) btn.innerText = "下一輪 (轉牌)";
-        if (currentStage === 3) btn.innerText = "下一輪 (河牌)";
-        if (currentStage === 4) btn.innerText = "開牌 (Showdown)";
+        if (currentStage === 2) btn.innerText = "下一輪";
+        if (currentStage === 3) btn.innerText = "下一輪";
+        if (currentStage === 4) btn.innerText = "開牌";
         if (currentStage === 5) btn.innerText = "重新開始";
     } else {
         // 遊戲結束，重置頁面
@@ -78,20 +78,20 @@ function renderStage() {
     if (s === 'flop') {
         const cards = gameData.stages.flop.map(c => createCardHTML(c)).join('');
         commDiv.innerHTML = cards + '<div class="card-slot"></div><div class="card-slot"></div>';
-        document.getElementById('msg').innerText = "第二輪：翻牌 (Flop)";
+        document.getElementById('msg').innerText = "第二輪：Flop";
     } 
     else if (s === 'turn') {
         const flop = gameData.stages.flop.map(c => createCardHTML(c)).join('');
         const turn = createCardHTML(gameData.stages.turn[0]);
         commDiv.innerHTML = flop + turn + '<div class="card-slot"></div>';
-        document.getElementById('msg').innerText = "第三輪：轉牌 (Turn)";
+        document.getElementById('msg').innerText = "第三輪：Turn";
     }
     else if (s === 'river') {
         const flop = gameData.stages.flop.map(c => createCardHTML(c)).join('');
         const turn = createCardHTML(gameData.stages.turn[0]);
         const river = createCardHTML(gameData.stages.river[0]);
         commDiv.innerHTML = flop + turn + river;
-        document.getElementById('msg').innerText = "第四輪：河牌 (River)";
+        document.getElementById('msg').innerText = "第四輪：River";
     }
     else if (s === 'showdown') {
         const show = gameData.stages.showdown;
