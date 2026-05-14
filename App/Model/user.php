@@ -15,6 +15,7 @@ class User {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
+
     // 更新籌碼 (這在遊戲結束時會用到)
     public function updateChips($userId, $amount) {
         $stmt = $this->db->prepare("UPDATE users SET chips = chips + ? WHERE id = ?");
