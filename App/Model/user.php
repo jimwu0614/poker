@@ -16,9 +16,12 @@ class User {
     }
 
 
-    // 更新籌碼 (這在遊戲結束時會用到)
-    public function updateChips($userId, $amount) {
-        $stmt = $this->db->prepare("UPDATE users SET chips = chips + ? WHERE id = ?");
-        return $stmt->execute([$amount, $userId]);
+
+    public function updateChips($username, $amount) {
+        // 使用預處理防止 SQL 注入
+        $stmt = $this->db->prepare("UPDATE users SET chips = chips + ? WHERE username = ?");
+        return $stmt->execute([$amount, $username]);
     }
 }
+
+

@@ -115,6 +115,24 @@ class GameController {
         }
         return $cards;
     }
+
+
+    public function handleBet($username, $amount) {
+        $userInfo = $this->user->getUserInfo($username);
+        
+        // 如果是扣錢 (下注)，檢查餘額夠不夠
+        if ($amount < 0 && $userInfo['chips'] < abs($amount)) {
+            return ['status' => 'error', 'message' => '籌碼不足！'];
+        }
+
+        if ($this->user->updateChips($username, $amount)) {
+            $newInfo = $this->user->getUserInfo($username); // 取得更新後的餘額
+            return ['status' => 'success', 'new_chips' => $newInfo['chips']];
+        }
+        
+        return ['status' => 'error', 'message' => '更新失敗'];
+    }
+
 }
 
 

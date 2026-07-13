@@ -19,6 +19,16 @@ switch ($action) {
         echo json_encode(['initial_chips' => 1000]);
         break;
 
+    case 'bet':
+        $username = 'admin'; // 暫時寫死
+        $amount = -(int)$_GET['amount']; // 傳入正數代表下注，所以這裡轉負數扣錢
+        
+        require_once __DIR__ . '/../controller/gameController.php';
+        $controller = new GameController();
+        $result = $controller->handleBet($username, $amount);
+        echo json_encode($result);
+        break;
+
     default:
         echo json_encode(['status' => 'error', 'message' => 'Invalid Action']);
         break;
