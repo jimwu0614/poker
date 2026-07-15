@@ -1,13 +1,14 @@
-// ==========================================
-// 全域變數與狀態管理
-// ==========================================
+/* 
+全域變數與狀態管理
+*/ 
 let gameData = null;      // 儲存後端回傳的完整遊戲劇本與使用者資料
 let currentStage = 0;     // 0:未開始, 1:Pre-flop, 2:Flop, 3:Turn, 4:River, 5:Showdown
 const stages = ['start', 'pre_flop', 'flop', 'turn', 'river', 'showdown'];
 
-// ==========================================
-// 核心流程控制：推進遊戲階段
-// ==========================================
+/*
+核心流程控制：推進遊戲階段
+*/
+
 async function nextStep() {
     const btn = document.getElementById('action-btn');
     
@@ -17,20 +18,24 @@ async function nextStep() {
             const response = await fetch('../App/api/action.php?action=new_game');
             gameData = await response.json();
             
-            // 除錯用：在瀏覽器 F12 Console 查看後端結構
             console.log("【遊戲初始化成功】後端回傳資料：", gameData);
 
             if (gameData.status === 'success') {
                 currentStage = 1;
                 
-                // 1. 更新畫面頂部的使用者名稱與初始籌碼 (已扣底注)
+                // 1. 更新畫面頂部的使用者名稱與初始籌碼 (此時後端可能尚未扣除底注，在此同步)
                 document.getElementById('user-name').innerText = gameData.user_info.name;
                 document.getElementById('user-chips').innerText = gameData.user_info.chips;
                 
-                // 2. 渲染玩家手牌與暗蓋的 AI 手牌
+                // 2. 初始化畫面上的總底池金額 (玩家 $100 + 3位 AI 各 $100 = $400)
+                if (document.getElementById('total-pot')) {
+                    document.getElementById('total-pot').innerText = gameData.pot;
+                }
+                
+                // 3. 渲染玩家手牌與暗蓋的 AI 手牌
                 renderPreFlop();
                 
-                // 3. 切換控制按鈕區：隱藏「開始新局」，顯示「下注控制項」
+                // 4. 切換控制按鈕區：隱藏「開始新局」，顯示「下注控制項」
                 toggleButtons(true);
             } else {
                 // 後端回傳錯誤（例如：資料庫找不到 admin 帳號）
@@ -38,21 +43,21 @@ async function nextStep() {
             }
         } catch (error) {
             console.error("API 連線失敗：", error);
-            document.getElementById('msg').innerText = "連線失敗，請檢查後端 API 是否正常";
+            document.getElementById('msg').innerText = "連線失敗，請檢查後端 API";
         }
     } else if (currentStage < 5) {
-        // 正常分段發牌推進
+        // 正常分段發牌推進 (Flop -> Turn -> River)
         currentStage++;
         renderStage();
     } else {
-        // 遊戲結束（Showdown 完畢），點擊按鈕重置頁面
+        // 遊戲結束（Showdown 完畢），點擊按鈕重置頁面重新開始
         location.reload();
     }
 }
 
-// ==========================================
-// 下注動作處理（與後端資料庫連動）
-// ==========================================
+/*
+下注動作處理（與後端資料庫連動）
+*/
 async function handleAction(type) {
     if (type === 'fold') {
         alert("你選擇了棄牌 (Fold)！這局結束。");
@@ -64,7 +69,7 @@ async function handleAction(type) {
     if (type === 'call') {
         betAmount = 200; // 假設每輪跟注金額為 $200
     }
-    // 'check' 的金額則為 0
+    // 若為 'check' (看牌)，下注金額為 0
 
     try {
         // 呼叫下注扣錢 API
@@ -74,13 +79,19 @@ async function handleAction(type) {
         console.log(`【下注動作: ${type}】API 回傳結果：`, result);
 
         if (result.status === 'success') {
-            // 扣錢成功，更新前端畫面的籌碼餘額
+            // 1. 扣錢成功，更新前端畫面的玩家籌碼餘額
             document.getElementById('user-chips').innerText = result.new_chips;
             
-            // 推進到下一個發牌階段（Flop -> Turn -> River -> Showdown）
+            // 2. 如果是跟注，前端畫面上的總底池手動加上 $800 (1玩家 + 3AI 共同跟注)
+            if (type === 'call' && document.getElementById('total-pot')) {
+                let currentPot = parseInt(document.getElementById('total-pot').innerText) || 0;
+                document.getElementById('total-pot').innerText = currentPot + 800;
+            }
+            
+            // 3. 自動推進到下一個發牌階段（例如 Pre-Flop -> Flop）
             nextStep();
         } else {
-            // 籌碼不足或其他後端驗證失敗
+            // 籌碼不足或其他後端驗證失敗，阻擋玩家繼續
             alert(result.message);
         }
     } catch (error) {
@@ -89,14 +100,14 @@ async function handleAction(type) {
     }
 }
 
-// ==========================================
-// UI 介面渲染工具
-// ==========================================
+/*
+UI 介面渲染工具
+*/ 
 
-/**
- * 控制按鈕區塊的切換
- * @param {boolean} showBet - true: 顯示遊戲中下注按鈕 / false: 顯示開始新局按鈕
- */
+/*
+控制按鈕區塊的切換
+@param {boolean} showBet - true: 顯示遊戲中下注按鈕 / false: 顯示開始新局按鈕
+*/
 function toggleButtons(showBet) {
     const startArea = document.getElementById('start-area');
     const betArea = document.getElementById('bet-area');
@@ -107,18 +118,18 @@ function toggleButtons(showBet) {
     }
 }
 
-/**
- * 將卡片物件轉為帶有花色符號與樣式的 HTML 字串
- */
+/*
+將卡片物件轉為帶有花色符號與樣式的 HTML 字串
+*/
 function createCardHTML(cardObj) {
     const suitMap = { 'Spades': '♠', 'Hearts': '♥', 'Diamonds': '♦', 'Clubs': '♣' };
     const isRed = (cardObj.suit === 'Hearts' || cardObj.suit === 'Diamonds');
     return `<div class="card-slot card ${isRed ? 'red' : ''}">${suitMap[cardObj.suit]}${cardObj.rank}</div>`;
 }
 
-/**
- * 階段一：發放手牌 (Pre-flop)
- */
+/*
+階段一：發放手牌 (Pre-flop)
+*/
 function renderPreFlop() {
     const data = gameData.stages.pre_flop;
     
@@ -142,9 +153,9 @@ function renderPreFlop() {
     document.getElementById('msg').innerText = "第一輪：請下注或看牌 (Pre-flop)";
 }
 
-/**
- * 階段二~五：公牌派發與翻牌開牌
- */
+/*
+階段二~五：公牌派發與翻牌開牌
+*/
 function renderStage() {
     const s = stages[currentStage];
     const commDiv = document.getElementById('community-cards');

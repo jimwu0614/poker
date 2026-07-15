@@ -25,19 +25,19 @@ class GameController {
 /**
      * 開始一場新對局 (含使用者資訊與分段劇本)
      */
-    public function startNewGame() {
+public function startNewGame() {
         try {
             $this->deck->shuffle();
 
-            // 1. 取得使用者資料 (面試點：實際應用中這裡應從 $_SESSION['user_id'] 取得)
-
-            $testUser = $this -> user -> getUserInfo('admin');
-            
+            $testUser = $this->user->getUserInfo('admin');
             if (!$testUser) {
                 return ['status' => 'error', 'message' => 'User not found'];
             }
 
-            // 2. 從資料庫挑選 3 位隨機對手
+            // 1. 玩家扣除底注 $100 (前一步驟你已實作或由前端發動)
+            // 這裡我們在後端計算初始底池：1 玩家 + 3 AI = 400 元
+            $initialPot = 400; 
+
             $pdo = $this->db->getConnection();
             $stmt = $pdo->query("SELECT * FROM bot_opponent ORDER BY RAND() LIMIT 3");
             $opponents = $stmt->fetchAll();
@@ -48,14 +48,12 @@ class GameController {
                 $opponents[2]['name_'] ?? 'AI_3'
             ];
 
-            // 3. 執行發牌邏輯
             $playerPrivate   = $this->drawCards(2);
             $ai1Private      = $this->drawCards(2);
             $ai2Private      = $this->drawCards(2);
             $ai3Private      = $this->drawCards(2);
             $communityCards  = $this->drawCards(5);
 
-            // 4. 運算最終比牌結果
             $results = $this->judge->getFinalRankings(
                 array_merge($playerPrivate, $communityCards),
                 array_merge($ai1Private, $communityCards),
@@ -63,20 +61,32 @@ class GameController {
                 array_merge($ai3Private, $communityCards)
             );
 
-            // 修正比牌結果中的名稱，對應到資料庫抓出的對手名
             foreach ($results as &$res) {
                 if ($res['name'] === 'AI_1') $res['name'] = $aiNames[0];
                 if ($res['name'] === 'AI_2') $res['name'] = $aiNames[1];
                 if ($res['name'] === 'AI_3') $res['name'] = $aiNames[2];
             }
 
-            // 5. 組合最終 Response
+            // 2. 核心功能：如果贏家是玩家 (admin)，直接在這裡把錢加回去！
+            // 總獎金計算公式：初始底池 400 + 之後的三輪下注 (每輪玩家200 + 3個AI各200) = 共 2800 元
+            $totalWinnerPrize = 2800; 
+            $playerWon = ($results[0]['name'] === $testUser['username']);
+            
+            if ($playerWon) {
+                // 贏了！把整池的錢儲存回資料庫
+                $this->user->updateChips($testUser['username'], $totalWinnerPrize);
+                // 重新取得最新籌碼餘額
+                $testUser = $this->user->getUserInfo('admin');
+            }
+
             $response = [
                 'status' => 'success',
                 'user_info' => [
                     'name'  => $testUser['username'],
-                    'chips' => (int)$testUser['chips'] // 確保輸出為整數
+                    'chips' => (int)$testUser['chips'],
+                    'player_won' => $playerWon // 讓前端知道玩家贏了沒
                 ],
+                'pot' => $initialPot, // 傳給前端初始底池
                 'stages' => [
                     'pre_flop' => [
                         'player' => $playerPrivate,
@@ -93,7 +103,8 @@ class GameController {
                         'ai_hands' => [
                             $ai1Private, $ai2Private, $ai3Private
                         ],
-                        'rankings' => $results
+                        'rankings' => $results,
+                        'prize' => $totalWinnerPrize // 告訴前端這局總獎金是多少
                     ]
                 ]
             ];
@@ -101,10 +112,7 @@ class GameController {
             return $response;
 
         } catch (Exception $e) {
-            return [
-                'status' => 'error',
-                'message' => '伺服器錯誤：' . $e->getMessage()
-            ];
+            return ['status' => 'error', 'message' => $e->getMessage()];
         }
     }
 

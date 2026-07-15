@@ -174,6 +174,10 @@
         籌碼: $<span id="user-chips">0</span>
     </div>
 
+    <div style="font-size: 1.2rem; margin: 10px 0; color: #f39c12; font-weight: bold;">
+        當前總底池 (POT): $<span id="total-pot">400</span>
+    </div>
+
     <div class="opponents">
         <div id="bot-0" class="player-area"><div class="player-info">對手 1</div><div style="color:#aaa;">待機中</div></div>
         <div id="bot-1" class="player-area"><div class="player-info">對手 2</div><div style="color:#aaa;">待機中</div></div>
