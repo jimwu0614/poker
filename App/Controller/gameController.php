@@ -65,6 +65,11 @@ public function startNewGame() {
                 if ($res['name'] === 'AI_1') $res['name'] = $aiNames[0];
                 if ($res['name'] === 'AI_2') $res['name'] = $aiNames[1];
                 if ($res['name'] === 'AI_3') $res['name'] = $aiNames[2];
+                
+                // 如果後端比牌判定回傳的名字是 "玩家"，就自動置換成實際的帳號名稱 (如 admin)
+                if ($res['name'] === '玩家') {
+                    $res['name'] = $testUser['username'];
+                }
             }
 
             // 2. 核心功能：如果贏家是玩家 (admin)，直接在這裡把錢加回去！

@@ -113,8 +113,13 @@ function toggleButtons(showBet) {
     const betArea = document.getElementById('bet-area');
     
     if (startArea && betArea) {
-        startArea.style.display = showBet ? 'none' : 'block';
-        betArea.style.display = showBet ? 'block' : 'none';
+        if (showBet) {
+            startArea.classList.add('hide');
+            betArea.classList.remove('hide');
+        } else {
+            startArea.classList.remove('hide');
+            betArea.classList.add('hide');
+        }
     }
 }
 
@@ -164,14 +169,14 @@ function renderStage() {
         // 翻牌階段：發出前 3 張公牌，後 2 張維持空格
         const cards = gameData.stages.flop.map(c => createCardHTML(c)).join('');
         commDiv.innerHTML = cards + '<div class="card-slot"></div><div class="card-slot"></div>';
-        document.getElementById('msg').innerText = "第二輪：翻牌 (Flop)";
+        document.getElementById('msg').innerText = "第二輪：翻牌 (Flop)！請看牌或跟注";
     } 
     else if (s === 'turn') {
         // 轉牌階段：前 3 張 + 第 4 張，最後 1 張維持空格
         const flop = gameData.stages.flop.map(c => createCardHTML(c)).join('');
         const turn = createCardHTML(gameData.stages.turn[0]);
         commDiv.innerHTML = flop + turn + '<div class="card-slot"></div>';
-        document.getElementById('msg').innerText = "第三輪：轉牌 (Turn)";
+        document.getElementById('msg').innerText = "第三輪：轉牌 (Turn)！請看牌或跟注";
     }
     else if (s === 'river') {
         // 河牌階段：發出完整 5 張公牌
@@ -179,30 +184,31 @@ function renderStage() {
         const turn = createCardHTML(gameData.stages.turn[0]);
         const river = createCardHTML(gameData.stages.river[0]);
         commDiv.innerHTML = flop + turn + river;
-        document.getElementById('msg').innerText = "第四輪：河牌 (River)，最後一輪下注！";
+        document.getElementById('msg').innerText = "第四輪：河牌 (River)！最後一輪下注";
         
         // 提示玩家，下一輪按鈕動作就是開牌了
         const callBtn = document.getElementById('call-btn');
-        if (callBtn) callBtn.innerText = "看牌 / 攤牌";
+        if (callBtn) {
+            callBtn.innerText = "看牌 / 攤牌";
+        }
     }
-    else if (s === 'showdown') {
-        // 開牌攤牌階段
+else if (s === 'showdown') {
         const show = gameData.stages.showdown;
         
-        // 1. 翻開所有對手 AI 的暗牌，並標註他們的最終名次與牌型
+        // 1. 翻開所有對手 AI 的暗牌，並標註他們的最終名次與牌型 (套用 CSS class)
         show.ai_hands.forEach((hand, i) => {
             const botName = gameData.stages.pre_flop.opponents[i].name;
             const botDiv = document.getElementById(`bot-${i}`);
             
-            // 尋找這個 AI 在排名榜中的資料
             const botRank = show.rankings.findIndex(r => r.name === botName) + 1;
-            const botLabel = show.rankings.find(r => r.name === botName).label;
+            const botInfo = show.rankings.find(r => r.name === botName);
+            const botLabel = botInfo ? botInfo.label : "未知牌型";
 
             if (botDiv) {
                 botDiv.innerHTML = `
                     <div class="player-info"><strong>${botName}</strong></div>
-                    <div style="color:gold; font-size:0.9rem;">第 ${botRank} 名: ${botLabel}</div>
-                    <div class="card-display" style="margin:0; min-height:auto;">
+                    <div class="player-rank-info">第 ${botRank} 名: ${botLabel}</div>
+                    <div class="card-display-compact">
                         ${hand.map(c => createCardHTML(c)).join('')}
                     </div>
                 `;
@@ -211,18 +217,70 @@ function renderStage() {
         
         // 2. 找出玩家自己的排名與牌型描述
         const playerRank = show.rankings.findIndex(r => r.name === gameData.user_info.name) + 1;
-        const playerLabel = show.rankings.find(r => r.name === gameData.user_info.name).label;
-
-        // 3. 在中央訊息欄宣布獲勝者
+        const playerInfo = show.rankings.find(r => r.name === gameData.user_info.name);
+        const playerLabel = playerInfo ? playerInfo.label : "未知牌型";
         const winner = show.rankings[0];
-        document.getElementById('msg').innerHTML = `
-            <span style="font-size:1.4rem; color:#f1c40f;">【 遊戲結束 】</span><br>
-            你的牌型是：<strong>${playerLabel}</strong> (第 ${playerRank} 名)<br>
-            本局贏家：<strong style="color:#2ecc71;">${winner.name}</strong> (${winner.label})
-        `;
+
+        // 3. 隱藏一般訊息提示，顯示 HTML 內建的結算看板
+        document.getElementById('msg').classList.add('hide');
+        const board = document.getElementById('showdown-board');
+        board.classList.remove('hide');
+
+        // 4. 用 JS 填入純文字資料到 HTML 元件中
+        document.getElementById('showdown-player-label').innerText = playerLabel;
+        document.getElementById('showdown-player-rank').innerText = `第 ${playerRank} 名`;
+        document.getElementById('showdown-winner-name').innerText = winner.name;
+        document.getElementById('showdown-winner-label').innerText = winner.label;
+
+        // 5. 依勝負狀態，控制顯示對應的 HTML 區塊
+        const winArea = document.getElementById('showdown-win-msg');
+        const loseArea = document.getElementById('showdown-lose-msg');
+
+        if (gameData.user_info.player_won) {
+            document.getElementById('showdown-prize-amount').innerText = show.prize;
+            winArea.classList.remove('hide');
+            loseArea.classList.add('hide');
+        } else {
+            document.getElementById('showdown-lose-winner').innerText = winner.name;
+            winArea.classList.add('hide');
+            loseArea.classList.remove('hide');
+        }
         
-        // 4. 切換按鈕回到初始狀態，文字變成「重新開始」
+        // 6. 重置按鈕
         toggleButtons(false);
-        document.getElementById('action-btn').innerText = "再玩一局";
+        const startBtn = document.getElementById('action-btn');
+        if (startBtn) {
+            startBtn.innerText = "再玩一局";
+        }
     }
 }
+
+
+
+
+// 網頁初始化：一進網頁自動撈取玩家籌碼與名稱
+
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        // 呼叫初始化 API (這會撈取 admin 的資料，但不會開始新局)
+        const response = await fetch('../App/api/action.php?action=new_game');
+        const data = await response.json();
+        
+        console.log("【網頁初始載入】玩家資料：", data);
+
+        if (data.status === 'success') {
+            // 填入玩家名稱與籌碼 (與後端回傳的 admin 資料同步)
+            const userNameEl = document.getElementById('user-name');
+            const userChipsEl = document.getElementById('user-chips');
+            
+            if (userNameEl) userNameEl.innerText = data.user_info.name;
+            if (userChipsEl) userChipsEl.innerText = data.user_info.chips;
+        } else {
+            console.warn("初始載入失敗：" + data.message);
+            document.getElementById('user-name').innerText = "未登入";
+        }
+    } catch (error) {
+        console.error("網頁初始化 API 連線失敗：", error);
+        document.getElementById('user-name').innerText = "連線失敗";
+    }
+});
